@@ -1,0 +1,117 @@
+name: Build and publish release assets
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Verify source before packaging
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libfuse2
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Check formatting of added Rust modules
+        run: rustfmt --edition 2021 --check src-tauri/src/auth/*.rs src-tauri/src/commands/horizon_command.rs
+
+      - name: Build and type-check frontend
+        run: yarn build
+
+      - name: Run Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked --workspace
+
+      - name: Run Clippy
+        working-directory: src-tauri
+        run: cargo clippy --locked --workspace --all-targets
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: checks
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux DEB and AppImage
+            platform: ubuntu-22.04
+            bundles: deb,appimage
+            artifact: northstar-linux
+          - name: Windows NSIS installer
+            platform: windows-latest
+            bundles: nsis
+            artifact: northstar-windows
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libfuse2
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build and upload release assets
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: v__VERSION__
+          releaseName: Northstar Launcher v__VERSION__
+          releaseBody: >-
+            Test release built automatically from the main branch.
+            Review the project README for current requirements and limitations.
+          releaseDraft: false
+          prerelease: true
+          args: --bundles ${{ matrix.bundles }}
+          uploadWorkflowArtifacts: true
+          workflowArtifactNamePattern: ${{ matrix.artifact }}-[platform]-[arch]-[bundle]

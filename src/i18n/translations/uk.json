@@ -1,0 +1,23 @@
+{
+  "settings.horizon.title": "Нативний рушій Horizon",
+  "settings.horizon.description": "Запуск сумісного Rust-клієнта Horizon. Облікові записи Ely.by та Microsoft цей рушій не отримує.",
+  "settings.horizon.installation": "Встановлення рушія",
+  "settings.horizon.installation_description": "Виберіть виконуваний файл і каталог підготовлених ресурсів.",
+  "settings.horizon.not_configured": "Не налаштовано",
+  "settings.horizon.choose": "Вибрати рушій і ресурси",
+  "settings.horizon.configured": "Шлях до Horizon збережено",
+  "settings.horizon.world": "Назва світу",
+  "settings.horizon.world_description": "Необов'язкова назва світу, який відкриється після запуску.",
+  "settings.horizon.default_world": "Новий світ",
+  "settings.horizon.render_distance": "Дальність промальовування",
+  "settings.horizon.render_distance_description": "Підтримувана Horizon відстань у чанках (2–64).",
+  "settings.horizon.process": "Процес",
+  "settings.horizon.process_description": "Вивід зберігається в каталозі журналів лаунчера.",
+  "settings.horizon.launch": "Запустити Horizon",
+  "settings.horizon.stop": "Зупинити",
+  "settings.horizon.started": "Horizon запущено",
+  "settings.horizon.state_running": "Працює",
+  "settings.horizon.state_stopping": "Зупиняється",
+  "settings.horizon.state_exited": "Завершено",
+  "settings.horizon.state_failed": "Помилка"
+}
